@@ -1,4 +1,5 @@
 <script src='../../bower_components/fecha/fecha.min.js'></script>
+<script src='../../build-temp/util.js'></script>
 
 <!--
 collection of utility functions.
@@ -37,13 +38,6 @@ window.hassUtil.HIDE_MORE_INFO = [
 
 window.hassUtil.LANGUAGE = navigator.languages ?
   navigator.languages[0] : navigator.language || navigator.userLanguage;
-
-window.hassUtil.attributeClassNames = function (stateObj, attributes) {
-  if (!stateObj) return '';
-  return attributes.map(function (attribute) {
-    return attribute in stateObj.attributes ? 'has-' + attribute : '';
-  }).join(' ');
-};
 
 // Expects featureClassNames to be an object mapping feature-bit -> className
 window.hassUtil.featureClassNames = function (stateObj, featureClassNames) {
@@ -347,11 +341,16 @@ window.hassUtil.domainIcon = function (domain, state) {
       return 'mdi:open-in-new';
 
     case 'zwave':
-      if (state) {
-        if (state.indexOf('Dead') !== -1) return 'mdi:emoticon-dead';
-        if (state.indexOf('Sleeping') !== -1) return 'mdi:sleep';
+      switch (state) {
+        case 'dead':
+          return 'mdi:emoticon-dead';
+        case 'sleeping':
+          return 'mdi:sleep';
+        case 'initializing':
+          return 'mdi:timer-sand';
+        default:
+          return 'mdi:nfc';
       }
-      return 'mdi:nfc';
 
     default:
       /* eslint-disable no-console */
@@ -385,6 +384,8 @@ window.hassUtil.binarySensorIcon = function (state) {
     case 'safety':
     case 'smoke':
       return activated ? 'mdi:verified' : 'mdi:alert';
+    case 'plug':
+      return activated ? 'mdi:power-plug-off' : 'mdi:power-plug';
     default:
       return activated ? 'mdi:radiobox-blank' : 'mdi:checkbox-marked-circle';
   }
@@ -462,71 +463,6 @@ window.hassUtil.sortByName = function (entityA, entityB) {
     return 1;
   }
   return 0;
-};
-
-window.hassUtil.computeStateState = function (stateObj) {
-  if (!stateObj._stateDisplay) {
-    stateObj._stateDisplay = stateObj.state.replace(/_/g, ' ');
-    const domain = window.hassUtil.computeDomain(stateObj);
-
-    if (stateObj.attributes.unit_of_measurement) {
-      stateObj._stateDisplay += ' ' + stateObj.attributes.unit_of_measurement;
-    }
-    if (domain === 'binary_sensor') {
-      switch (stateObj.attributes.device_class) {
-        case 'moisture':
-          stateObj._stateDisplay = (stateObj._stateDisplay === 'off') ? 'dry' : 'wet';
-          break;
-        case 'gas':
-        case 'motion':
-        case 'occupancy':
-        case 'smoke':
-        case 'sound':
-        case 'vibration':
-          stateObj._stateDisplay = (stateObj._stateDisplay === 'off') ? 'clear' : 'detected';
-          break;
-        case 'opening':
-          stateObj._stateDisplay = (stateObj._stateDisplay === 'off') ? 'closed' : 'open';
-          break;
-        case 'safety':
-          stateObj._stateDisplay = (stateObj._stateDisplay === 'off') ? 'safe' : 'unsafe';
-          break;
-        case 'cold':
-        case 'connectivity':
-        case 'heat':
-        case 'light':
-        case 'moving':
-        case 'power':
-        default:
-      }
-    } else if (domain === 'input_datetime') {
-      let date;
-      if (!stateObj.attributes.has_time) {
-        date = new Date(
-          stateObj.attributes.year,
-          stateObj.attributes.month - 1,
-          stateObj.attributes.day
-        );
-        stateObj._stateDisplay = window.hassUtil.formatDate(date);
-      } else if (!stateObj.attributes.has_date) {
-        date = new Date(
-          1970, 0, 1,
-          stateObj.attributes.hour,
-          stateObj.attributes.minute
-        );
-        stateObj._stateDisplay = window.hassUtil.formatTime(date);
-      } else {
-        date = new Date(
-          stateObj.attributes.year, stateObj.attributes.month - 1,
-          stateObj.attributes.day, stateObj.attributes.hour,
-          stateObj.attributes.minute
-        );
-        stateObj._stateDisplay = window.hassUtil.formatDateTime(date);
-      }
-    }
-  }
-
-  return stateObj._stateDisplay;
 };
 
 window.hassUtil.isComponentLoaded = function (hass, component) {

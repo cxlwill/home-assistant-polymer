@@ -3,10 +3,11 @@ import * as HAWS from 'home-assistant-js-websocket';
 window.HAWS = HAWS;
 window.HASS_DEMO = __DEMO__;
 window.HASS_DEV = __DEV__;
+window.HASS_BUILD = __BUILD__;
 
 const init = window.createHassConnection = function (password) {
   const proto = window.location.protocol === 'https:' ? 'wss' : 'ws';
-  const url = `${proto}://${window.location.host}/api/websocket`;
+  const url = `${proto}://${window.location.host}/api/websocket?${window.HASS_BUILD}`;
   const options = {
     setupRetry: 10,
   };
@@ -28,10 +29,4 @@ if (window.noAuth) {
   window.hassConnection = init(window.localStorage.authToken);
 } else {
   window.hassConnection = null;
-}
-
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', function () {
-    navigator.serviceWorker.register('/service_worker.js');
-  });
 }
